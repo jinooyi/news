@@ -18,6 +18,8 @@
     --accent-bg: #fffbeb;
     --accent-text: #92400e;
     --accent-soft: #fef3c7;
+    --info: #2563eb;
+    --info-bg: #eff6ff;
     --danger: #ef4444;
     --danger-soft: #fecaca;
   }
@@ -34,6 +36,8 @@
     --accent-bg: rgba(251, 191, 36, 0.12);
     --accent-text: #fcd34d;
     --accent-soft: rgba(251, 191, 36, 0.18);
+    --info: #60a5fa;
+    --info-bg: rgba(96, 165, 250, 0.12);
     --danger: #f87171;
     --danger-soft: rgba(248, 113, 113, 0.25);
   }
@@ -49,6 +53,10 @@
   }
   a { color: inherit; }
   button { font-family: inherit; cursor: pointer; }
+
+  .icon { width: 18px; height: 18px; flex-shrink: 0; }
+  .icon-lg { width: 22px; height: 22px; flex-shrink: 0; }
+
   .app {
     display: grid;
     grid-template-columns: 1fr 280px;
@@ -84,6 +92,20 @@
   .btn:hover { background: var(--bg-soft); }
   .btn:active { transform: scale(0.97); }
   .btn[disabled] { opacity: 0.4; cursor: not-allowed; }
+  .icon-btn {
+    width: 36px; height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: var(--bg-card);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+  }
+  .icon-btn:hover { background: var(--bg-soft); }
+  .icon-btn[disabled] { opacity: 0.4; cursor: not-allowed; }
+
   select.btn { padding-right: 24px; }
   main { min-width: 0; }
   .empty-state { padding: 60px 20px; text-align: center; color: var(--text-muted); font-size: 13px; }
@@ -133,15 +155,6 @@
     max-width: 110px;
   }
   .section-sort:hover { color: var(--text); }
-  .section-shuffle {
-    background: var(--bg-card);
-    border: 1px solid var(--border-strong);
-    color: var(--text-muted);
-    padding: 3px 9px;
-    font-size: 11px;
-    border-radius: 6px;
-  }
-  .section-shuffle:hover { background: var(--bg-soft); color: var(--text); }
   .section.top-news .section-header {
     background: transparent;
     cursor: default;
@@ -213,7 +226,7 @@
     border-radius: 5px;
     text-decoration: none;
     line-height: 1;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 3px;
   }
@@ -330,23 +343,54 @@
   }
   .btn-danger:hover { background: var(--danger-soft); }
 
-  /* ===== MOBILE CART HEADER BUTTON ===== */
-  .cart-btn-mobile {
+  /* ===== MOBILE BOTTOM NAV (4개) ===== */
+  .bottom-nav {
     display: none;
-    position: relative;
-    padding: 6px 10px !important;
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+    z-index: 90;
+    grid-template-columns: repeat(4, 1fr);
   }
-  .cart-badge-inline {
+  .bottom-nav-btn {
+    background: transparent;
+    border: none;
+    padding: 6px 2px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-height: 56px;
+    color: var(--text-muted);
+    position: relative;
+  }
+  .bottom-nav-btn:active { background: var(--bg-soft); border-radius: 8px; }
+  .bottom-nav-btn.active { color: var(--info); }
+  .bottom-nav-btn .icon-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .bottom-nav-btn .label {
+    font-size: 10px;
+    font-weight: 500;
+    line-height: 1;
+  }
+  .bottom-nav-badge {
     position: absolute;
     top: -7px;
-    right: -7px;
-    min-width: 20px;
-    height: 20px;
+    right: -10px;
+    min-width: 18px;
+    height: 18px;
     padding: 0 5px;
     border-radius: 999px;
     background: var(--danger);
     color: white;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
     display: flex;
     align-items: center;
@@ -360,8 +404,8 @@
     100% { transform: scale(1); opacity: 1; }
   }
 
-  /* ===== MOBILE CART OVERLAY ===== */
-  .cart-overlay {
+  /* ===== MOBILE OVERLAYS ===== */
+  .overlay {
     display: none;
     position: fixed;
     inset: 0;
@@ -369,8 +413,8 @@
     z-index: 200;
     flex-direction: column;
   }
-  .cart-overlay.open { display: flex; }
-  .cart-overlay-header {
+  .overlay.open { display: flex; }
+  .overlay-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -378,7 +422,7 @@
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
   }
-  .cart-overlay-header h2 {
+  .overlay-header h2 {
     margin: 0;
     font-size: 17px;
     font-weight: 600;
@@ -386,7 +430,7 @@
     align-items: center;
     gap: 8px;
   }
-  .cart-overlay-header h2 .badge {
+  .overlay-header h2 .badge {
     font-size: 12px;
     padding: 2px 9px;
     background: var(--accent);
@@ -394,24 +438,26 @@
     border-radius: 999px;
     font-weight: 600;
   }
-  [data-theme="dark"] .cart-overlay-header h2 .badge { color: #1a1408; }
-  .cart-close {
+  [data-theme="dark"] .overlay-header h2 .badge { color: #1a1408; }
+  .overlay-close {
     background: transparent;
     border: none;
     color: var(--text);
-    font-size: 22px;
     padding: 4px 10px;
     border-radius: 6px;
     line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
-  .cart-close:active { background: var(--bg-soft); }
-  .cart-body {
+  .overlay-close:active { background: var(--bg-soft); }
+  .overlay-body {
     flex: 1;
     overflow-y: auto;
     padding: 14px 16px;
     -webkit-overflow-scrolling: touch;
   }
-  .cart-actions {
+  .overlay-actions {
     flex-shrink: 0;
     padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
     border-top: 1px solid var(--border);
@@ -420,13 +466,14 @@
     flex-direction: column;
     gap: 6px;
   }
-  .cart-overlay .panel-item {
+
+  .overlay .panel-item {
     padding: 10px 0;
     font-size: 13px;
   }
-  .cart-overlay .panel-item .title { font-size: 13px; }
-  .cart-overlay .panel-item .source { font-size: 11px; }
-  .cart-overlay .panel-item .remove {
+  .overlay .panel-item .title { font-size: 13px; }
+  .overlay .panel-item .source { font-size: 11px; }
+  .overlay .panel-item .remove {
     font-size: 18px;
     width: 32px;
     height: 32px;
@@ -434,12 +481,31 @@
     align-items: center;
     justify-content: center;
   }
-  .cart-overlay .panel-cat-label { font-size: 11px; padding: 4px 9px; }
-  .cart-overlay .btn-primary { padding: 13px; font-size: 14px; }
-  .cart-overlay .btn-danger { padding: 11px; font-size: 13px; }
-  .cart-overlay .panel-empty { padding: 60px 8px; font-size: 13px; }
+  .overlay .panel-cat-label { font-size: 11px; padding: 4px 9px; }
+  .overlay .btn-primary { padding: 13px; font-size: 14px; }
+  .overlay .btn-danger { padding: 11px; font-size: 13px; }
+  .overlay .panel-empty { padding: 60px 8px; font-size: 13px; }
 
-  /* ===== SCRIPT MODAL ===== */
+  .list-overlay-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 4px;
+    border-bottom: 0.5px solid var(--border);
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .list-overlay-item:active { background: var(--bg-soft); }
+  .list-overlay-item.active {
+    color: var(--info);
+    font-weight: 600;
+  }
+  .list-overlay-item .meta {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: normal;
+  }
+
   .script-modal {
     display: none;
     position: fixed;
@@ -484,10 +550,11 @@
     background: transparent;
     border: none;
     color: var(--text);
-    font-size: 22px;
     padding: 4px 10px;
     border-radius: 6px;
     line-height: 1;
+    display: inline-flex;
+    align-items: center;
   }
   .script-modal-close:hover { background: var(--bg-soft); }
   .script-modal-body {
@@ -534,7 +601,7 @@
 
   .toast {
     position: fixed;
-    bottom: 30px;
+    bottom: 90px;
     left: 50%;
     transform: translateX(-50%);
     background: var(--text);
@@ -555,17 +622,15 @@
     .app {
       grid-template-columns: 1fr;
       padding: 10px;
-      padding-bottom: 20px;
+      padding-bottom: 80px;
     }
     aside.sidepanel { display: none; }
-    .cart-btn-mobile { display: inline-flex; align-items: center; }
+    .bottom-nav { display: grid; }
     .topbar h1 { font-size: 17px; }
     .topbar .subtitle { font-size: 10px; }
-    .topbar .actions { gap: 4px; }
-    .topbar .actions .btn {
-      padding: 6px 9px;
-      font-size: 11px;
-    }
+    .topbar .actions { gap: 6px; }
+    .topbar .actions select.mobile-hide,
+    .topbar .actions button.mobile-hide { display: none !important; }
     .card { padding: 8px 10px; }
     .card .title { font-size: 13px; }
     .card .meta { font-size: 10px; }
@@ -588,8 +653,8 @@
     .script-modal-body textarea { min-height: 60vh; font-size: 13px; }
   }
   @media (min-width: 901px) {
-    .cart-btn-mobile { display: none !important; }
-    .cart-overlay { display: none !important; }
+    .bottom-nav { display: none !important; }
+    .overlay { display: none !important; }
   }
 </style>
 </head>
@@ -603,13 +668,12 @@
       <div class="subtitle" id="subtitle">로딩중...</div>
     </div>
     <div class="actions">
-      <select class="btn" id="dateSelect" title="날짜 선택"></select>
-      <button class="btn" id="undoBtn" title="되돌리기 (Cmd/Ctrl+Z)" disabled>↶</button>
-      <button class="btn" id="shuffleAllBtn" title="전체 셔플">🔀</button>
-      <button class="btn" id="themeBtn" title="다크/라이트 모드">🌙</button>
-      <button class="btn cart-btn-mobile" id="cartBtnMobile" title="장바구니" aria-label="장바구니">
-        🛒
-        <span class="cart-badge-inline" id="cartBadgeInline" style="display: none;">0</span>
+      <select class="btn mobile-hide" id="dateSelect" title="날짜 선택"></select>
+      <button class="icon-btn" id="undoBtn" title="되돌리기 (Cmd/Ctrl+Z)" disabled>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-15-6.7L3 13"></path></svg>
+      </button>
+      <button class="icon-btn" id="themeBtn" title="다크/라이트 모드">
+        <svg class="icon" id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
       </button>
     </div>
   </header>
@@ -620,7 +684,7 @@
 
   <aside class="sidepanel" id="sidepanel">
     <div class="panel-head">
-      <div class="title">선택</div>
+      <div class="title">선택한 기사</div>
       <div class="badge" id="selectedCount">0</div>
     </div>
     <div id="panelBody">
@@ -634,18 +698,71 @@
 
 </div>
 
-<div class="cart-overlay" id="cartOverlay" role="dialog" aria-modal="true">
-  <div class="cart-overlay-header">
-    <h2>
-      장바구니
-      <span class="badge" id="cartCount">0</span>
-    </h2>
-    <button class="cart-close" id="cartClose" aria-label="닫기">✕</button>
+<nav class="bottom-nav" id="bottomNav">
+  <button class="bottom-nav-btn" id="navDate" title="날짜">
+    <div class="icon-wrap">
+      <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+    </div>
+    <span class="label">날짜</span>
+  </button>
+
+  <button class="bottom-nav-btn" id="navCategory" title="카테고리">
+    <div class="icon-wrap">
+      <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><circle cx="4" cy="6" r="1.2"></circle><circle cx="4" cy="12" r="1.2"></circle><circle cx="4" cy="18" r="1.2"></circle></svg>
+    </div>
+    <span class="label">카테고리</span>
+  </button>
+
+  <button class="bottom-nav-btn" id="navSelected" title="선택한 기사">
+    <div class="icon-wrap">
+      <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+      <span class="bottom-nav-badge" id="navSelectedBadge" style="display: none;">0</span>
+    </div>
+    <span class="label">선택한 기사</span>
+  </button>
+
+  <button class="bottom-nav-btn" id="navScript" title="스크립트 생성">
+    <div class="icon-wrap">
+      <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+    </div>
+    <span class="label">스크립트</span>
+  </button>
+</nav>
+
+<div class="overlay" id="dateOverlay" role="dialog" aria-modal="true">
+  <div class="overlay-header">
+    <h2>날짜 선택</h2>
+    <button class="overlay-close" data-close-overlay="dateOverlay" aria-label="닫기">
+      <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
   </div>
-  <div class="cart-body" id="cartBody">
+  <div class="overlay-body" id="dateOverlayBody"></div>
+</div>
+
+<div class="overlay" id="categoryOverlay" role="dialog" aria-modal="true">
+  <div class="overlay-header">
+    <h2>카테고리로 이동</h2>
+    <button class="overlay-close" data-close-overlay="categoryOverlay" aria-label="닫기">
+      <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+  </div>
+  <div class="overlay-body" id="categoryOverlayBody"></div>
+</div>
+
+<div class="overlay" id="selectedOverlay" role="dialog" aria-modal="true">
+  <div class="overlay-header">
+    <h2>
+      선택한 기사
+      <span class="badge" id="selectedOverlayCount">0</span>
+    </h2>
+    <button class="overlay-close" data-close-overlay="selectedOverlay" aria-label="닫기">
+      <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+  </div>
+  <div class="overlay-body" id="selectedOverlayBody">
     <div class="panel-empty">기사를 선택하면 여기에 모입니다</div>
   </div>
-  <div class="cart-actions" id="cartActions" style="display: none;">
+  <div class="overlay-actions" id="selectedOverlayActions" style="display: none;">
     <button class="btn-primary" id="generateBtnMobile">📋 스크립트 생성</button>
     <button class="btn-danger" id="clearBtnMobile">🗑 비우기</button>
   </div>
@@ -658,7 +775,9 @@
         <h2>아나운서 스크립트</h2>
         <div class="meta" id="scriptMeta"></div>
       </div>
-      <button class="script-modal-close" id="scriptModalClose" aria-label="닫기">✕</button>
+      <button class="script-modal-close" id="scriptModalClose" aria-label="닫기">
+        <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
     </div>
     <div class="script-modal-body">
       <textarea id="scriptText" readonly spellcheck="false"></textarea>
@@ -705,7 +824,6 @@ const STATE = {
   selected: new Set(),
   hidden: new Set(),
   sortBy: {},
-  shuffleOrder: {},
   history: [],
   collapsed: new Set(),
 };
@@ -720,7 +838,6 @@ function saveLS() {
   localStorage.setItem($key("selected"), JSON.stringify([...STATE.selected]));
   localStorage.setItem($key("hidden"), JSON.stringify([...STATE.hidden]));
   localStorage.setItem($key("sortBy"), JSON.stringify(STATE.sortBy));
-  localStorage.setItem($key("shuffleOrder"), JSON.stringify(STATE.shuffleOrder));
   localStorage.setItem($key("collapsed"), JSON.stringify([...STATE.collapsed]));
 }
 
@@ -728,7 +845,6 @@ function loadLS() {
   STATE.selected = new Set(JSON.parse(localStorage.getItem($key("selected")) || "[]"));
   STATE.hidden = new Set(JSON.parse(localStorage.getItem($key("hidden")) || "[]"));
   STATE.sortBy = JSON.parse(localStorage.getItem($key("sortBy")) || "{}");
-  STATE.shuffleOrder = JSON.parse(localStorage.getItem($key("shuffleOrder")) || "{}");
   STATE.collapsed = new Set(JSON.parse(localStorage.getItem($key("collapsed")) || "[]"));
   STATE.history = [];
 }
@@ -754,15 +870,6 @@ function timeAgo(iso) {
   } catch (e) { return ""; }
 }
 
-function shuffle(arr) {
-  const a = arr.slice();
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
 function tsOf(iso) {
   if (!iso) return 0;
   const t = new Date(iso).getTime();
@@ -781,13 +888,6 @@ function undo() {
   if (last.type === "delete") {
     STATE.hidden.delete(last.id);
     showToast("삭제 취소: " + (last.title || "").slice(0, 30));
-  } else if (last.type === "shuffleSection") {
-    if (last.before === null) delete STATE.shuffleOrder[last.key];
-    else STATE.shuffleOrder[last.key] = last.before;
-    showToast(last.label + " 순서 복원");
-  } else if (last.type === "shuffleAll") {
-    STATE.shuffleOrder = last.before;
-    showToast("셔플 전 순서로 복원");
   } else if (last.type === "clearSelection") {
     STATE.selected = new Set(last.before);
     showToast("선택 복원");
@@ -804,7 +904,7 @@ function undo() {
 async function init() {
   const savedTheme = localStorage.getItem($globalKey("theme")) || "light";
   document.documentElement.setAttribute("data-theme", savedTheme);
-  el("themeBtn").textContent = savedTheme === "dark" ? "☀️" : "🌙";
+  updateThemeIcon(savedTheme);
 
   try {
     const res = await fetch("./ui_data/index.json");
@@ -830,6 +930,15 @@ async function init() {
   STATE.date = STATE.index.latest || (STATE.index.dates[0] && STATE.index.dates[0].date);
   sel.value = STATE.date;
   await loadDate(STATE.date);
+}
+
+function updateThemeIcon(theme) {
+  const ic = el("themeIcon");
+  if (theme === "dark") {
+    ic.innerHTML = '<circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.05" y2="7.05"></line><line x1="16.95" y1="16.95" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.05" y2="16.95"></line><line x1="16.95" y1="7.05" x2="19.07" y2="4.93"></line>';
+  } else {
+    ic.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>';
+  }
 }
 
 async function loadDate(date) {
@@ -874,15 +983,6 @@ function applySorted(ids, sortBy) {
   return arr.map(a => a.id);
 }
 
-function getOrderedIds(key, candidateIds) {
-  const shuffled = STATE.shuffleOrder[key];
-  if (shuffled && shuffled.length === candidateIds.length) {
-    const set = new Set(candidateIds);
-    if (shuffled.every(id => set.has(id))) return shuffled.slice();
-  }
-  return applySorted(candidateIds, getSortBy(key));
-}
-
 function makeSortDropdown(key, sortBy) {
   const sel = document.createElement("select");
   sel.className = "section-sort";
@@ -900,7 +1000,6 @@ function makeSortDropdown(key, sortBy) {
     const newVal = e.target.value;
     const before = STATE.sortBy[key];
     STATE.sortBy[key] = newVal;
-    if (STATE.shuffleOrder[key]) delete STATE.shuffleOrder[key];
     pushHistory({ type: "sortChange", key, before, label: key === TOP_NEWS_KEY ? "Top News" : key });
     saveLS();
     render();
@@ -981,15 +1080,6 @@ function buildSectionHeader(opts) {
   }
   const controls = header.querySelector(".section-controls");
   controls.appendChild(makeSortDropdown(opts.key, getSortBy(opts.key)));
-  const shuf = document.createElement("button");
-  shuf.className = "section-shuffle";
-  shuf.title = "이 섹션 셔플";
-  shuf.textContent = "🔀";
-  shuf.addEventListener("click", (e) => {
-    e.stopPropagation();
-    shuffleSection(opts.key, opts.title || "Top News");
-  });
-  controls.appendChild(shuf);
   return header;
 }
 
@@ -1004,6 +1094,7 @@ function render() {
   if (topIds.length > 0) {
     const sec = document.createElement("section");
     sec.className = "section top-news";
+    sec.dataset.cat = "TOP NEWS";
     const header = buildSectionHeader({
       title: "TOP NEWS",
       count: topIds.length,
@@ -1013,7 +1104,7 @@ function render() {
     sec.appendChild(header);
     const body = document.createElement("div");
     body.className = "section-body";
-    const ordered = getOrderedIds(TOP_NEWS_KEY, topIds);
+    const ordered = applySorted(topIds, getSortBy(TOP_NEWS_KEY));
     for (const id of ordered) {
       const a = articleById(id);
       if (a) body.appendChild(renderCard(a, true));
@@ -1044,7 +1135,7 @@ function render() {
 
     const body = document.createElement("div");
     body.className = "section-body";
-    const ordered = getOrderedIds(cat.name, visibleIds);
+    const ordered = applySorted(visibleIds, getSortBy(cat.name));
     for (const id of ordered) {
       const a = articleById(id);
       if (a) body.appendChild(renderCard(a, false));
@@ -1058,7 +1149,7 @@ function render() {
   }
 
   renderPanel();
-  renderCart();
+  renderBottomNavBadge();
 }
 
 function renderPanelInto(bodyEl, actionsEl) {
@@ -1106,27 +1197,26 @@ function renderPanelInto(bodyEl, actionsEl) {
 function renderPanel() {
   const count = STATE.selected.size;
   el("selectedCount").textContent = count;
+  el("selectedOverlayCount").textContent = count;
   renderPanelInto(el("panelBody"), el("panelActions"));
+  renderPanelInto(el("selectedOverlayBody"), el("selectedOverlayActions"));
 }
 
-function renderCart() {
+function renderBottomNavBadge() {
   const count = STATE.selected.size;
-  el("cartCount").textContent = count;
-  const badgeInline = el("cartBadgeInline");
+  const badge = el("navSelectedBadge");
   if (count > 0) {
     const newText = count > 99 ? "99+" : String(count);
-    if (badgeInline.textContent !== newText) {
-      // 다시 애니메이션 트리거
-      badgeInline.style.animation = "none";
-      badgeInline.offsetHeight; // reflow
-      badgeInline.style.animation = "";
+    if (badge.textContent !== newText) {
+      badge.style.animation = "none";
+      badge.offsetHeight;
+      badge.style.animation = "";
     }
-    badgeInline.textContent = newText;
-    badgeInline.style.display = "flex";
+    badge.textContent = newText;
+    badge.style.display = "flex";
   } else {
-    badgeInline.style.display = "none";
+    badge.style.display = "none";
   }
-  renderPanelInto(el("cartBody"), el("cartActions"));
 }
 
 function toggleSelect(id) {
@@ -1140,35 +1230,6 @@ function hideCard(id, title) {
   STATE.hidden.add(id);
   STATE.selected.delete(id);
   pushHistory({ type: "delete", id, title });
-  saveLS();
-  render();
-}
-
-function shuffleSection(key, label) {
-  let candidateIds;
-  if (key === TOP_NEWS_KEY) {
-    candidateIds = (STATE.data.top_news_ids || []).filter(id => !STATE.hidden.has(id));
-  } else {
-    const cat = STATE.data.categories.find(c => c.name === key);
-    if (!cat) return;
-    candidateIds = cat.article_ids.filter(id => !STATE.hidden.has(id));
-  }
-  const before = STATE.shuffleOrder[key] ? STATE.shuffleOrder[key].slice() : null;
-  STATE.shuffleOrder[key] = shuffle(candidateIds);
-  pushHistory({ type: "shuffleSection", key, label, before });
-  saveLS();
-  render();
-}
-
-function shuffleAll() {
-  const before = JSON.parse(JSON.stringify(STATE.shuffleOrder));
-  for (const cat of STATE.data.categories) {
-    const visibleIds = cat.article_ids.filter(id => !STATE.hidden.has(id));
-    STATE.shuffleOrder[cat.name] = shuffle(visibleIds);
-  }
-  const topVisible = (STATE.data.top_news_ids || []).filter(id => !STATE.hidden.has(id));
-  STATE.shuffleOrder[TOP_NEWS_KEY] = shuffle(topVisible);
-  pushHistory({ type: "shuffleAll", before });
   saveLS();
   render();
 }
@@ -1220,7 +1281,7 @@ function openScriptModal() {
   }
   el("scriptText").value = result.text;
   el("scriptMeta").textContent = `${result.count}개 기사 · ${STATE.date} · 약 ${result.text.length.toLocaleString()}자`;
-  el("cartOverlay").classList.remove("open");
+  closeAllOverlays();
   el("scriptModal").classList.add("open");
   document.body.style.overflow = "hidden";
 }
@@ -1250,13 +1311,70 @@ function clearSelection() {
   render();
 }
 
-function openCart() {
-  el("cartOverlay").classList.add("open");
+function openOverlay(id) {
+  closeAllOverlays();
+  el(id).classList.add("open");
   document.body.style.overflow = "hidden";
 }
-function closeCart() {
-  el("cartOverlay").classList.remove("open");
+function closeAllOverlays() {
+  document.querySelectorAll(".overlay.open").forEach(o => o.classList.remove("open"));
   document.body.style.overflow = "";
+}
+
+function openDateOverlay() {
+  const body = el("dateOverlayBody");
+  body.innerHTML = "";
+  for (const d of STATE.index.dates) {
+    const item = document.createElement("div");
+    item.className = "list-overlay-item" + (d.date === STATE.date ? " active" : "");
+    item.innerHTML = `
+      <span>${d.date}</span>
+      <span class="meta">${d.total}개</span>
+    `;
+    item.addEventListener("click", () => {
+      closeAllOverlays();
+      loadDate(d.date);
+    });
+    body.appendChild(item);
+  }
+  openOverlay("dateOverlay");
+}
+
+function openCategoryOverlay() {
+  const body = el("categoryOverlayBody");
+  body.innerHTML = "";
+
+  if (STATE.data.top_news_ids && STATE.data.top_news_ids.length) {
+    const item = document.createElement("div");
+    item.className = "list-overlay-item";
+    item.innerHTML = `<span>● TOP NEWS</span><span class="meta">${STATE.data.top_news_ids.length}개</span>`;
+    item.addEventListener("click", () => jumpToCategory("TOP NEWS"));
+    body.appendChild(item);
+  }
+
+  for (const cat of STATE.data.categories) {
+    const visible = cat.article_ids.filter(id => !STATE.hidden.has(id)).length;
+    if (visible === 0) continue;
+    const item = document.createElement("div");
+    item.className = "list-overlay-item";
+    item.innerHTML = `<span>${escapeHtml(cat.name)}</span><span class="meta">${visible}개</span>`;
+    item.addEventListener("click", () => jumpToCategory(cat.name));
+    body.appendChild(item);
+  }
+  openOverlay("categoryOverlay");
+}
+
+function jumpToCategory(name) {
+  closeAllOverlays();
+  if (STATE.collapsed.has(name)) {
+    STATE.collapsed.delete(name);
+    saveLS();
+    render();
+  }
+  setTimeout(() => {
+    const sec = document.querySelector(`section[data-cat="${CSS.escape(name)}"]`);
+    if (sec) sec.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, 50);
 }
 
 el("dateSelect").addEventListener("change", (e) => loadDate(e.target.value));
@@ -1265,22 +1383,28 @@ el("themeBtn").addEventListener("click", () => {
   const next = cur === "dark" ? "light" : "dark";
   document.documentElement.setAttribute("data-theme", next);
   localStorage.setItem($globalKey("theme"), next);
-  el("themeBtn").textContent = next === "dark" ? "☀️" : "🌙";
+  updateThemeIcon(next);
 });
 el("undoBtn").addEventListener("click", undo);
-el("shuffleAllBtn").addEventListener("click", shuffleAll);
 el("generateBtn").addEventListener("click", openScriptModal);
 el("clearBtn").addEventListener("click", clearSelection);
 el("generateBtnMobile").addEventListener("click", openScriptModal);
 el("clearBtnMobile").addEventListener("click", clearSelection);
-el("cartBtnMobile").addEventListener("click", openCart);
-el("cartClose").addEventListener("click", closeCart);
+
 el("scriptModalClose").addEventListener("click", closeScriptModal);
 el("scriptModalCloseBtn").addEventListener("click", closeScriptModal);
 el("scriptCopyBtn").addEventListener("click", copyScriptText);
-
 el("scriptModal").addEventListener("click", (e) => {
   if (e.target.id === "scriptModal") closeScriptModal();
+});
+
+el("navDate").addEventListener("click", openDateOverlay);
+el("navCategory").addEventListener("click", openCategoryOverlay);
+el("navSelected").addEventListener("click", () => openOverlay("selectedOverlay"));
+el("navScript").addEventListener("click", openScriptModal);
+
+document.querySelectorAll("[data-close-overlay]").forEach(btn => {
+  btn.addEventListener("click", () => closeAllOverlays());
 });
 
 document.addEventListener("keydown", (e) => {
@@ -1290,7 +1414,7 @@ document.addEventListener("keydown", (e) => {
   }
   if (e.key === "Escape") {
     closeScriptModal();
-    closeCart();
+    closeAllOverlays();
   }
 });
 
