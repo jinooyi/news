@@ -1,19 +1,19 @@
 {
-  "generated_at": "2026-04-26T13:18:57.931891",
+  "generated_at": "2026-04-26T13:30:02.179777",
   "dates": [
     {
       "date": "2026-04-26",
-      "total": 338,
-      "with_body": 293
+      "total": 296,
+      "with_body": 94
     },
     {
       "date": "2026-04-25",
-      "total": 348,
-      "with_body": 293
+      "total": 289,
+      "with_body": 102
     },
     {
       "date": "2026-04-24",
-      "total": 353,
+      "total": 302,
       "with_body": 12
     }
   ],
