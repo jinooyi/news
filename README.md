@@ -32,11 +32,7 @@
 - Google News 한국어 RSS
 - 조선/중앙/연합 (RSS 재확인 필요)
 
-### 한인 로컬 (달라스/텍사스)
-- KTN 코리아타운뉴스 (koreatownnews.com)
-- 주간포커스 텍사스 (weeklyfocustx.com)
-- 달사람닷컴 (dalsaram.com)
-- 달코라 (dalkora.com)
+### 
 
 ### 미주 전체 한인
 - 미주중앙일보 (Koreadaily)
