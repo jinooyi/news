@@ -169,6 +169,7 @@
     background: var(--bg-card);
     transition: background 0.1s, border-color 0.1s;
     cursor: pointer;
+    user-select: none;
   }
   .card:hover { background: var(--bg-soft); }
   .card.selected {
@@ -184,6 +185,7 @@
     accent-color: var(--accent);
     cursor: pointer;
     margin: 0;
+    pointer-events: none;
   }
   .card .title {
     flex: 1; min-width: 0;
@@ -201,6 +203,25 @@
     text-align: right;
   }
   .card .meta .outlets { color: var(--accent-text); font-weight: 500; }
+  .card .source-btn {
+    flex-shrink: 0;
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    color: var(--text-muted);
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 5px;
+    text-decoration: none;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .card .source-btn:hover {
+    background: var(--bg-soft);
+    color: var(--text);
+    border-color: var(--text-muted);
+  }
   .card .delete {
     flex-shrink: 0;
     width: 22px; height: 22px;
@@ -215,6 +236,7 @@
     transition: all 0.1s;
   }
   .card .delete:hover { background: var(--danger-soft); color: var(--danger); }
+
   aside.sidepanel {
     background: var(--bg-soft);
     border: 1px solid var(--border);
@@ -307,9 +329,213 @@
     border-radius: 6px;
   }
   .btn-danger:hover { background: var(--danger-soft); }
+
+  /* ===== MOBILE CART HEADER BUTTON ===== */
+  .cart-btn-mobile {
+    display: none;
+    position: relative;
+    padding: 6px 10px !important;
+  }
+  .cart-badge-inline {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--danger);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--bg);
+    line-height: 1;
+    animation: badgePop 0.18s ease-out;
+  }
+  @keyframes badgePop {
+    0% { transform: scale(0.6); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  /* ===== MOBILE CART OVERLAY ===== */
+  .cart-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 200;
+    flex-direction: column;
+  }
+  .cart-overlay.open { display: flex; }
+  .cart-overlay-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .cart-overlay-header h2 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .cart-overlay-header h2 .badge {
+    font-size: 12px;
+    padding: 2px 9px;
+    background: var(--accent);
+    color: white;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+  [data-theme="dark"] .cart-overlay-header h2 .badge { color: #1a1408; }
+  .cart-close {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 22px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    line-height: 1;
+  }
+  .cart-close:active { background: var(--bg-soft); }
+  .cart-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 16px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .cart-actions {
+    flex-shrink: 0;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .cart-overlay .panel-item {
+    padding: 10px 0;
+    font-size: 13px;
+  }
+  .cart-overlay .panel-item .title { font-size: 13px; }
+  .cart-overlay .panel-item .source { font-size: 11px; }
+  .cart-overlay .panel-item .remove {
+    font-size: 18px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .cart-overlay .panel-cat-label { font-size: 11px; padding: 4px 9px; }
+  .cart-overlay .btn-primary { padding: 13px; font-size: 14px; }
+  .cart-overlay .btn-danger { padding: 11px; font-size: 13px; }
+  .cart-overlay .panel-empty { padding: 60px 8px; font-size: 13px; }
+
+  /* ===== SCRIPT MODAL ===== */
+  .script-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 250;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .script-modal.open { display: flex; }
+  .script-modal-content {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 800px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .script-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .script-modal-header h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .script-modal-header .meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+  .script-modal-close {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 22px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    line-height: 1;
+  }
+  .script-modal-close:hover { background: var(--bg-soft); }
+  .script-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 18px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .script-modal-body textarea {
+    width: 100%;
+    min-height: 400px;
+    padding: 12px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text);
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    resize: vertical;
+  }
+  .script-modal-actions {
+    flex-shrink: 0;
+    padding: 12px 18px calc(12px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+  .script-modal-actions .btn-secondary {
+    background: var(--bg-card);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+    padding: 9px 18px;
+    font-size: 13px;
+    border-radius: 6px;
+  }
+  .script-modal-actions .btn-secondary:hover { background: var(--bg-soft); }
+  .script-modal-actions .btn-primary {
+    width: auto;
+    padding: 9px 22px;
+    font-size: 13px;
+  }
+
   .toast {
     position: fixed;
-    bottom: 20px; left: 50%;
+    bottom: 30px;
+    left: 50%;
     transform: translateX(-50%);
     background: var(--text);
     color: var(--bg);
@@ -320,48 +546,50 @@
     pointer-events: none;
     transition: opacity 0.2s, transform 0.2s;
     z-index: 1000;
+    max-width: 90vw;
+    text-align: center;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+
   @media (max-width: 900px) {
     .app {
       grid-template-columns: 1fr;
       padding: 10px;
-      padding-bottom: 80px;
+      padding-bottom: 20px;
     }
-    aside.sidepanel {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      top: auto;
-      max-height: 60vh;
-      border-radius: 12px 12px 0 0;
-      border: 1px solid var(--border);
-      border-bottom: none;
-      transform: translateY(calc(100% - 50px));
-      transition: transform 0.2s;
-      z-index: 100;
-    }
-    aside.sidepanel.open { transform: translateY(0); }
-    aside.sidepanel::before {
-      content: "";
-      display: block;
-      width: 36px; height: 4px;
-      background: var(--border-strong);
-      border-radius: 2px;
-      margin: 0 auto 8px;
-    }
-    .panel-toggle-mobile {
-      display: block;
-      width: 100%;
-      text-align: center;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      padding: 4px 0;
-    }
+    aside.sidepanel { display: none; }
+    .cart-btn-mobile { display: inline-flex; align-items: center; }
     .topbar h1 { font-size: 17px; }
+    .topbar .subtitle { font-size: 10px; }
+    .topbar .actions { gap: 4px; }
+    .topbar .actions .btn {
+      padding: 6px 9px;
+      font-size: 11px;
+    }
+    .card { padding: 8px 10px; }
+    .card .title { font-size: 13px; }
+    .card .meta { font-size: 10px; }
+    .card .delete {
+      width: 28px; height: 28px;
+      font-size: 16px;
+    }
+    .card .check { width: 18px; height: 18px; }
+    .card .source-btn {
+      padding: 4px 7px;
+      font-size: 10px;
+    }
+    .script-modal { padding: 0; }
+    .script-modal-content {
+      max-height: 100vh;
+      height: 100vh;
+      max-width: 100%;
+      border-radius: 0;
+    }
+    .script-modal-body textarea { min-height: 60vh; font-size: 13px; }
   }
   @media (min-width: 901px) {
-    .panel-toggle-mobile { display: none; }
+    .cart-btn-mobile { display: none !important; }
+    .cart-overlay { display: none !important; }
   }
 </style>
 </head>
@@ -376,9 +604,13 @@
     </div>
     <div class="actions">
       <select class="btn" id="dateSelect" title="날짜 선택"></select>
-      <button class="btn" id="undoBtn" title="되돌리기 (Cmd/Ctrl+Z)" disabled>↶ Undo</button>
-      <button class="btn" id="shuffleAllBtn" title="전체 셔플">🔀 전체</button>
+      <button class="btn" id="undoBtn" title="되돌리기 (Cmd/Ctrl+Z)" disabled>↶</button>
+      <button class="btn" id="shuffleAllBtn" title="전체 셔플">🔀</button>
       <button class="btn" id="themeBtn" title="다크/라이트 모드">🌙</button>
+      <button class="btn cart-btn-mobile" id="cartBtnMobile" title="장바구니" aria-label="장바구니">
+        🛒
+        <span class="cart-badge-inline" id="cartBadgeInline" style="display: none;">0</span>
+      </button>
     </div>
   </header>
 
@@ -387,7 +619,6 @@
   </main>
 
   <aside class="sidepanel" id="sidepanel">
-    <div class="panel-toggle-mobile" id="panelToggle">선택 0개 ▲</div>
     <div class="panel-head">
       <div class="title">선택</div>
       <div class="badge" id="selectedCount">0</div>
@@ -396,11 +627,47 @@
       <div class="panel-empty">기사를 선택하면 여기에 모입니다</div>
     </div>
     <div class="panel-actions" id="panelActions" style="display: none;">
-      <button class="btn-primary" id="copyBtn">📋 복사하기</button>
+      <button class="btn-primary" id="generateBtn">📋 스크립트 생성</button>
       <button class="btn-danger" id="clearBtn">🗑 비우기</button>
     </div>
   </aside>
 
+</div>
+
+<div class="cart-overlay" id="cartOverlay" role="dialog" aria-modal="true">
+  <div class="cart-overlay-header">
+    <h2>
+      장바구니
+      <span class="badge" id="cartCount">0</span>
+    </h2>
+    <button class="cart-close" id="cartClose" aria-label="닫기">✕</button>
+  </div>
+  <div class="cart-body" id="cartBody">
+    <div class="panel-empty">기사를 선택하면 여기에 모입니다</div>
+  </div>
+  <div class="cart-actions" id="cartActions" style="display: none;">
+    <button class="btn-primary" id="generateBtnMobile">📋 스크립트 생성</button>
+    <button class="btn-danger" id="clearBtnMobile">🗑 비우기</button>
+  </div>
+</div>
+
+<div class="script-modal" id="scriptModal" role="dialog" aria-modal="true">
+  <div class="script-modal-content">
+    <div class="script-modal-header">
+      <div>
+        <h2>아나운서 스크립트</h2>
+        <div class="meta" id="scriptMeta"></div>
+      </div>
+      <button class="script-modal-close" id="scriptModalClose" aria-label="닫기">✕</button>
+    </div>
+    <div class="script-modal-body">
+      <textarea id="scriptText" readonly spellcheck="false"></textarea>
+    </div>
+    <div class="script-modal-actions">
+      <button class="btn-secondary" id="scriptModalCloseBtn">닫기</button>
+      <button class="btn-primary" id="scriptCopyBtn">📋 클립보드 복사</button>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -412,6 +679,24 @@ const SORT_OPTIONS = {
   oldest: "오래된순",
 };
 const TOP_NEWS_KEY = "__top_news__";
+
+const ANCHOR_PROMPT = `다음 기사들을 한국 뉴스 아나운서가 방송에서 읽어주는 스크립트로 다시 써주세요.
+
+요구사항:
+- 기사마다 30-60초 분량 (약 90-180자)
+- 아나운서 톤: 차분하고 명확하게, "~습니다" 종결
+- 첫 문장에 핵심 사실 (Who, What, When, Where)
+- 이어서 배경/세부 정보
+- 외래어는 한국어로 풀어서 (예: "shutdown" → "가동 중단")
+- 감정 표현이나 이모지 제거
+- 매체의 의견/추측은 사실로 단정하지 말고 "~로 알려졌습니다", "~로 전해졌습니다" 사용
+- 직접 인용은 짧게(15자 이내), 정확한 발언이 필요할 때만
+- 카테고리별로 구분해서 출력
+- 같은 사건을 여러 매체가 다룬 경우 종합해서 한 꼭지로
+- 각 꼭지 끝에 (출처: 매체명) 표기
+- 본문에 들어있는 "Key Points", 다른 기사 목록, 광고, 저작권 문구 등은 무시
+
+`;
 
 const STATE = {
   date: null,
@@ -631,35 +916,34 @@ function renderCard(article, isTopNews) {
 
   const meta = [];
   if (article.source) meta.push(article.source.slice(0, 10));
+  const t = timeAgo(article.published);
+  if (t) meta.push(t);
   if (isTopNews) {
     const ci = STATE.data.cluster_info && STATE.data.cluster_info[article.cluster_id];
     if (ci && ci.size >= 2) {
       meta.push(`<span class="outlets">+${ci.size - 1}개</span>`);
     }
-  } else {
-    const t = timeAgo(article.published);
-    if (t) meta.push(t);
   }
+
+  const sourceBtn = article.url
+    ? `<a href="${escapeHtml(article.url)}" target="_blank" rel="noopener" class="source-btn" title="원문 보기">🔗 원문</a>`
+    : '';
 
   card.innerHTML = `
     <input type="checkbox" class="check" ${isSelected ? "checked" : ""} aria-label="선택">
     <div class="title" title="${escapeHtml(article.title)}">${escapeHtml(article.title)}</div>
     <div class="meta">${meta.join(" · ")}</div>
+    ${sourceBtn}
     <button class="delete" title="숨기기" aria-label="숨기기">✕</button>
   `;
 
   card.addEventListener("click", (e) => {
-    if (e.target.classList.contains("check")) return;
-    if (e.target.classList.contains("delete")) {
+    if (e.target.closest(".source-btn")) return;
+    if (e.target.closest(".delete")) {
       e.stopPropagation();
       hideCard(article.id, article.title);
       return;
     }
-    if (article.url) window.open(article.url, "_blank", "noopener");
-  });
-
-  card.querySelector(".check").addEventListener("change", (e) => {
-    e.stopPropagation();
     toggleSelect(article.id);
   });
 
@@ -774,18 +1058,17 @@ function render() {
   }
 
   renderPanel();
-  el("panelToggle").textContent = `선택 ${STATE.selected.size}개 ▲`;
+  renderCart();
 }
 
-function renderPanel() {
+function renderPanelInto(bodyEl, actionsEl) {
   const count = STATE.selected.size;
-  el("selectedCount").textContent = count;
-  el("panelActions").style.display = count > 0 ? "flex" : "none";
-  const body = el("panelBody");
   if (count === 0) {
-    body.innerHTML = `<div class="panel-empty">기사를 선택하면 여기에 모입니다</div>`;
+    bodyEl.innerHTML = `<div class="panel-empty">기사를 선택하면 여기에 모입니다</div>`;
+    actionsEl.style.display = "none";
     return;
   }
+  actionsEl.style.display = "flex";
   const groups = {};
   for (const id of STATE.selected) {
     const a = articleById(id);
@@ -793,7 +1076,7 @@ function renderPanel() {
     const cat = a.category || "기타";
     (groups[cat] ||= []).push(a);
   }
-  body.innerHTML = "";
+  bodyEl.innerHTML = "";
   const catOrder = STATE.data.categories.map(c => c.name);
   const catNames = Object.keys(groups).sort((a, b) => {
     const ai = catOrder.indexOf(a); const bi = catOrder.indexOf(b);
@@ -816,8 +1099,34 @@ function renderPanel() {
       item.querySelector(".remove").addEventListener("click", () => toggleSelect(a.id));
       g.appendChild(item);
     }
-    body.appendChild(g);
+    bodyEl.appendChild(g);
   }
+}
+
+function renderPanel() {
+  const count = STATE.selected.size;
+  el("selectedCount").textContent = count;
+  renderPanelInto(el("panelBody"), el("panelActions"));
+}
+
+function renderCart() {
+  const count = STATE.selected.size;
+  el("cartCount").textContent = count;
+  const badgeInline = el("cartBadgeInline");
+  if (count > 0) {
+    const newText = count > 99 ? "99+" : String(count);
+    if (badgeInline.textContent !== newText) {
+      // 다시 애니메이션 트리거
+      badgeInline.style.animation = "none";
+      badgeInline.offsetHeight; // reflow
+      badgeInline.style.animation = "";
+    }
+    badgeInline.textContent = newText;
+    badgeInline.style.display = "flex";
+  } else {
+    badgeInline.style.display = "none";
+  }
+  renderPanelInto(el("cartBody"), el("cartActions"));
 }
 
 function toggleSelect(id) {
@@ -871,16 +1180,19 @@ function toggleSection(name) {
   render();
 }
 
-function copySelected() {
+function buildScriptText() {
   const ids = [...STATE.selected];
-  if (ids.length === 0) return;
+  if (ids.length === 0) return null;
   const groups = {};
   for (const id of ids) {
     const a = articleById(id);
     if (!a) continue;
     (groups[a.category || "기타"] ||= []).push(a);
   }
-  let text = `# 선택한 기사 ${ids.length}개 (${STATE.date})\n\n`;
+
+  let text = ANCHOR_PROMPT;
+  text += `---\n\n# 선택한 기사 ${ids.length}개 (${STATE.date})\n\n`;
+
   const catOrder = STATE.data.categories.map(c => c.name);
   const cats = Object.keys(groups).sort((a, b) => {
     const ai = catOrder.indexOf(a); const bi = catOrder.indexOf(b);
@@ -897,10 +1209,35 @@ function copySelected() {
       text += `\n---\n\n`;
     }
   }
+  return { text, count: ids.length };
+}
+
+function openScriptModal() {
+  const result = buildScriptText();
+  if (!result) {
+    showToast("선택한 기사가 없습니다");
+    return;
+  }
+  el("scriptText").value = result.text;
+  el("scriptMeta").textContent = `${result.count}개 기사 · ${STATE.date} · 약 ${result.text.length.toLocaleString()}자`;
+  el("cartOverlay").classList.remove("open");
+  el("scriptModal").classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+
+function closeScriptModal() {
+  el("scriptModal").classList.remove("open");
+  document.body.style.overflow = "";
+}
+
+function copyScriptText() {
+  const text = el("scriptText").value;
+  if (!text) return;
   navigator.clipboard.writeText(text).then(() => {
-    showToast(`${ids.length}개 기사 복사됨 (claude.ai에 붙여넣기)`);
+    showToast("클립보드에 복사됨 → claude.ai에 붙여넣기");
   }).catch(() => {
-    showToast("복사 실패. 브라우저 권한을 확인하세요.");
+    el("scriptText").select();
+    showToast("선택됨. Ctrl+C로 복사하세요");
   });
 }
 
@@ -913,6 +1250,15 @@ function clearSelection() {
   render();
 }
 
+function openCart() {
+  el("cartOverlay").classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+function closeCart() {
+  el("cartOverlay").classList.remove("open");
+  document.body.style.overflow = "";
+}
+
 el("dateSelect").addEventListener("change", (e) => loadDate(e.target.value));
 el("themeBtn").addEventListener("click", () => {
   const cur = document.documentElement.getAttribute("data-theme");
@@ -923,15 +1269,28 @@ el("themeBtn").addEventListener("click", () => {
 });
 el("undoBtn").addEventListener("click", undo);
 el("shuffleAllBtn").addEventListener("click", shuffleAll);
-el("copyBtn").addEventListener("click", copySelected);
+el("generateBtn").addEventListener("click", openScriptModal);
 el("clearBtn").addEventListener("click", clearSelection);
-el("panelToggle").addEventListener("click", () => {
-  el("sidepanel").classList.toggle("open");
+el("generateBtnMobile").addEventListener("click", openScriptModal);
+el("clearBtnMobile").addEventListener("click", clearSelection);
+el("cartBtnMobile").addEventListener("click", openCart);
+el("cartClose").addEventListener("click", closeCart);
+el("scriptModalClose").addEventListener("click", closeScriptModal);
+el("scriptModalCloseBtn").addEventListener("click", closeScriptModal);
+el("scriptCopyBtn").addEventListener("click", copyScriptText);
+
+el("scriptModal").addEventListener("click", (e) => {
+  if (e.target.id === "scriptModal") closeScriptModal();
 });
+
 document.addEventListener("keydown", (e) => {
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") {
     e.preventDefault();
     undo();
+  }
+  if (e.key === "Escape") {
+    closeScriptModal();
+    closeCart();
   }
 });
 
