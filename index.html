@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>한국 뉴스 큐레이션</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-soft: #f8fafc;
+    --bg-card: #ffffff;
+    --border: #e2e8f0;
+    --border-strong: #cbd5e1;
+    --text: #0f172a;
+    --text-muted: #64748b;
+    --text-faint: #94a3b8;
+    --accent: #f59e0b;
+    --accent-bg: #fffbeb;
+    --accent-text: #92400e;
+    --accent-soft: #fef3c7;
+    --danger: #ef4444;
+    --danger-soft: #fecaca;
+  }
+  [data-theme="dark"] {
+    --bg: #0b1220;
+    --bg-soft: #131c2e;
+    --bg-card: #182236;
+    --border: #2a3a55;
+    --border-strong: #3a4d6e;
+    --text: #e6edf6;
+    --text-muted: #94a3b8;
+    --text-faint: #64748b;
+    --accent: #fbbf24;
+    --accent-bg: rgba(251, 191, 36, 0.12);
+    --accent-text: #fcd34d;
+    --accent-soft: rgba(251, 191, 36, 0.18);
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.25);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Pretendard", BlinkMacSystemFont, "Segoe UI", Roboto, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    font-size: 14px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  button { font-family: inherit; cursor: pointer; }
+  .app {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 16px;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 16px;
+    min-height: 100vh;
+  }
+  header.topbar {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 4px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .topbar h1 { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.3px; }
+  .topbar .subtitle { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .topbar .actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .btn {
+    background: var(--bg-card);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+    padding: 6px 11px;
+    font-size: 12px;
+    border-radius: 6px;
+    transition: all 0.12s;
+  }
+  .btn:hover { background: var(--bg-soft); }
+  .btn:active { transform: scale(0.97); }
+  .btn[disabled] { opacity: 0.4; cursor: not-allowed; }
+  select.btn { padding-right: 24px; }
+  main { min-width: 0; }
+  .empty-state { padding: 60px 20px; text-align: center; color: var(--text-muted); font-size: 13px; }
+  .section { margin-bottom: 18px; }
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--bg-soft);
+    border-radius: 8px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    user-select: none;
+    gap: 8px;
+  }
+  .section-header:hover { background: var(--border); }
+  .section-title {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 600;
+    flex: 1; min-width: 0;
+  }
+  .section-title .toggle {
+    font-size: 10px; color: var(--text-muted);
+    transition: transform 0.15s;
+    width: 10px; display: inline-block;
+  }
+  .section.collapsed .toggle { transform: rotate(-90deg); }
+  .section.collapsed .section-body { display: none; }
+  .section-count {
+    font-size: 11px; padding: 1px 8px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text-muted);
+  }
+  .section-controls { display: flex; gap: 4px; align-items: center; flex-shrink: 0; }
+  .section-sort {
+    background: var(--bg-card);
+    border: 1px solid var(--border-strong);
+    color: var(--text-muted);
+    padding: 3px 4px 3px 8px;
+    font-size: 11px;
+    border-radius: 6px;
+    font-family: inherit;
+    cursor: pointer;
+    max-width: 110px;
+  }
+  .section-sort:hover { color: var(--text); }
+  .section-shuffle {
+    background: var(--bg-card);
+    border: 1px solid var(--border-strong);
+    color: var(--text-muted);
+    padding: 3px 9px;
+    font-size: 11px;
+    border-radius: 6px;
+  }
+  .section-shuffle:hover { background: var(--bg-soft); color: var(--text); }
+  .section.top-news .section-header {
+    background: transparent;
+    cursor: default;
+    padding: 6px 0;
+  }
+  .section.top-news .section-header:hover { background: transparent; }
+  .section.top-news .section-title .toggle { display: none; }
+  .top-news-label {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.2px;
+  }
+  .top-news-label .dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .card {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 4px;
+    background: var(--bg-card);
+    transition: background 0.1s, border-color 0.1s;
+    cursor: pointer;
+  }
+  .card:hover { background: var(--bg-soft); }
+  .card.selected {
+    border: 2px solid var(--accent);
+    background: var(--accent-bg);
+    padding: 6px 9px;
+  }
+  .card.top-news-card { padding: 8px 10px; }
+  .card.top-news-card.selected { padding: 7px 9px; }
+  .card .check {
+    flex-shrink: 0;
+    width: 16px; height: 16px;
+    accent-color: var(--accent);
+    cursor: pointer;
+    margin: 0;
+  }
+  .card .title {
+    flex: 1; min-width: 0;
+    font-size: 13px; font-weight: 500;
+    line-height: 1.35;
+    color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .card.top-news-card .title { font-size: 13.5px; }
+  .card .meta {
+    font-size: 10px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    white-space: nowrap;
+    text-align: right;
+  }
+  .card .meta .outlets { color: var(--accent-text); font-weight: 500; }
+  .card .delete {
+    flex-shrink: 0;
+    width: 22px; height: 22px;
+    display: flex; align-items: center; justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--text-faint);
+    font-size: 14px;
+    border-radius: 4px;
+    padding: 0;
+    line-height: 1;
+    transition: all 0.1s;
+  }
+  .card .delete:hover { background: var(--danger-soft); color: var(--danger); }
+  aside.sidepanel {
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+    align-self: start;
+    position: sticky;
+    top: 16px;
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+  }
+  .panel-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px;
+  }
+  .panel-head .title { font-size: 13px; font-weight: 600; }
+  .panel-head .badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    background: var(--accent);
+    color: white;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+  [data-theme="dark"] .panel-head .badge { color: #1a1408; }
+  .panel-empty {
+    text-align: center; padding: 30px 8px;
+    font-size: 12px; color: var(--text-muted);
+  }
+  .panel-group { margin-bottom: 10px; }
+  .panel-cat-label {
+    font-size: 9px;
+    color: var(--accent-text);
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    background: var(--accent-soft);
+    padding: 3px 7px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-bottom: 4px;
+  }
+  .panel-item {
+    font-size: 11px;
+    line-height: 1.35;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 6px;
+    align-items: flex-start;
+  }
+  .panel-item:last-child { border-bottom: none; margin-bottom: 0; }
+  .panel-item .text { flex: 1; }
+  .panel-item .title { font-weight: 500; color: var(--text); }
+  .panel-item .source { color: var(--text-muted); font-size: 10px; margin-top: 1px; }
+  .panel-item .remove {
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    color: var(--text-faint);
+    font-size: 12px;
+    padding: 0;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .panel-item .remove:hover { color: var(--danger); }
+  .panel-actions {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .btn-primary {
+    width: 100%; padding: 9px;
+    background: var(--text);
+    color: var(--bg);
+    border: none;
+    font-size: 12px; font-weight: 500;
+    border-radius: 6px;
+  }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-danger {
+    width: 100%; padding: 8px;
+    background: var(--bg-card);
+    color: var(--danger);
+    border: 1px solid var(--danger-soft);
+    font-size: 11px;
+    border-radius: 6px;
+  }
+  .btn-danger:hover { background: var(--danger-soft); }
+  .toast {
+    position: fixed;
+    bottom: 20px; left: 50%;
+    transform: translateX(-50%);
+    background: var(--text);
+    color: var(--bg);
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 12px; font-weight: 500;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 1000;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+  @media (max-width: 900px) {
+    .app {
+      grid-template-columns: 1fr;
+      padding: 10px;
+      padding-bottom: 80px;
+    }
+    aside.sidepanel {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      top: auto;
+      max-height: 60vh;
+      border-radius: 12px 12px 0 0;
+      border: 1px solid var(--border);
+      border-bottom: none;
+      transform: translateY(calc(100% - 50px));
+      transition: transform 0.2s;
+      z-index: 100;
+    }
+    aside.sidepanel.open { transform: translateY(0); }
+    aside.sidepanel::before {
+      content: "";
+      display: block;
+      width: 36px; height: 4px;
+      background: var(--border-strong);
+      border-radius: 2px;
+      margin: 0 auto 8px;
+    }
+    .panel-toggle-mobile {
+      display: block;
+      width: 100%;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 4px 0;
+    }
+    .topbar h1 { font-size: 17px; }
+  }
+  @media (min-width: 901px) {
+    .panel-toggle-mobile { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header class="topbar">
+    <div>
+      <h1>한국 뉴스 큐레이션</h1>
+      <div class="subtitle" id="subtitle">로딩중...</div>
+    </div>
+    <div class="actions">
+      <select class="btn" id="dateSelect" title="날짜 선택"></select>
+      <button class="btn" id="undoBtn" title="되돌리기 (Cmd/Ctrl+Z)" disabled>↶ Undo</button>
+      <button class="btn" id="shuffleAllBtn" title="전체 셔플">🔀 전체</button>
+      <button class="btn" id="themeBtn" title="다크/라이트 모드">🌙</button>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="empty-state">데이터를 불러오는 중입니다...</div>
+  </main>
+
+  <aside class="sidepanel" id="sidepanel">
+    <div class="panel-toggle-mobile" id="panelToggle">선택 0개 ▲</div>
+    <div class="panel-head">
+      <div class="title">선택</div>
+      <div class="badge" id="selectedCount">0</div>
+    </div>
+    <div id="panelBody">
+      <div class="panel-empty">기사를 선택하면 여기에 모입니다</div>
+    </div>
+    <div class="panel-actions" id="panelActions" style="display: none;">
+      <button class="btn-primary" id="copyBtn">📋 복사하기</button>
+      <button class="btn-danger" id="clearBtn">🗑 비우기</button>
+    </div>
+  </aside>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SORT_OPTIONS = {
+  cluster: "중복 보도순",
+  newest: "최신순",
+  oldest: "오래된순",
+};
+const TOP_NEWS_KEY = "__top_news__";
+
+const STATE = {
+  date: null,
+  data: null,
+  index: null,
+  selected: new Set(),
+  hidden: new Set(),
+  sortBy: {},
+  shuffleOrder: {},
+  history: [],
+  collapsed: new Set(),
+};
+const MAX_HISTORY = 50;
+
+const el = (id) => document.getElementById(id);
+const $key = (suffix) => `news_app_${suffix}_${STATE.date || "default"}`;
+const $globalKey = (suffix) => `news_app_g_${suffix}`;
+
+function saveLS() {
+  if (!STATE.date) return;
+  localStorage.setItem($key("selected"), JSON.stringify([...STATE.selected]));
+  localStorage.setItem($key("hidden"), JSON.stringify([...STATE.hidden]));
+  localStorage.setItem($key("sortBy"), JSON.stringify(STATE.sortBy));
+  localStorage.setItem($key("shuffleOrder"), JSON.stringify(STATE.shuffleOrder));
+  localStorage.setItem($key("collapsed"), JSON.stringify([...STATE.collapsed]));
+}
+
+function loadLS() {
+  STATE.selected = new Set(JSON.parse(localStorage.getItem($key("selected")) || "[]"));
+  STATE.hidden = new Set(JSON.parse(localStorage.getItem($key("hidden")) || "[]"));
+  STATE.sortBy = JSON.parse(localStorage.getItem($key("sortBy")) || "{}");
+  STATE.shuffleOrder = JSON.parse(localStorage.getItem($key("shuffleOrder")) || "{}");
+  STATE.collapsed = new Set(JSON.parse(localStorage.getItem($key("collapsed")) || "[]"));
+  STATE.history = [];
+}
+
+function showToast(msg) {
+  const t = el("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => t.classList.remove("show"), 1800);
+}
+
+function timeAgo(iso) {
+  if (!iso) return "";
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "";
+    const diffH = (Date.now() - d.getTime()) / 3600000;
+    if (diffH < 0) return "방금";
+    if (diffH < 1) return Math.max(1, Math.round(diffH * 60)) + "분";
+    if (diffH < 24) return Math.round(diffH) + "시간";
+    return Math.round(diffH / 24) + "일";
+  } catch (e) { return ""; }
+}
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function tsOf(iso) {
+  if (!iso) return 0;
+  const t = new Date(iso).getTime();
+  return isNaN(t) ? 0 : t;
+}
+
+function pushHistory(entry) {
+  STATE.history.push(entry);
+  if (STATE.history.length > MAX_HISTORY) STATE.history.shift();
+  el("undoBtn").disabled = false;
+}
+
+function undo() {
+  if (STATE.history.length === 0) return;
+  const last = STATE.history.pop();
+  if (last.type === "delete") {
+    STATE.hidden.delete(last.id);
+    showToast("삭제 취소: " + (last.title || "").slice(0, 30));
+  } else if (last.type === "shuffleSection") {
+    if (last.before === null) delete STATE.shuffleOrder[last.key];
+    else STATE.shuffleOrder[last.key] = last.before;
+    showToast(last.label + " 순서 복원");
+  } else if (last.type === "shuffleAll") {
+    STATE.shuffleOrder = last.before;
+    showToast("셔플 전 순서로 복원");
+  } else if (last.type === "clearSelection") {
+    STATE.selected = new Set(last.before);
+    showToast("선택 복원");
+  } else if (last.type === "sortChange") {
+    if (last.before === undefined) delete STATE.sortBy[last.key];
+    else STATE.sortBy[last.key] = last.before;
+    showToast(last.label + " 정렬 복원");
+  }
+  if (STATE.history.length === 0) el("undoBtn").disabled = true;
+  saveLS();
+  render();
+}
+
+async function init() {
+  const savedTheme = localStorage.getItem($globalKey("theme")) || "light";
+  document.documentElement.setAttribute("data-theme", savedTheme);
+  el("themeBtn").textContent = savedTheme === "dark" ? "☀️" : "🌙";
+
+  try {
+    const res = await fetch("./ui_data/index.json");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    STATE.index = await res.json();
+  } catch (e) {
+    el("main").innerHTML = `<div class="empty-state">
+      ❌ ui_data/index.json을 불러올 수 없습니다.<br><br>
+      <code style="font-size:11px;">build_ui_data.py</code>를 먼저 실행해주세요.<br>
+      <small style="color: var(--text-faint);">(${e.message})</small>
+    </div>`;
+    return;
+  }
+
+  const sel = el("dateSelect");
+  sel.innerHTML = "";
+  for (const d of STATE.index.dates) {
+    const opt = document.createElement("option");
+    opt.value = d.date;
+    opt.textContent = `${d.date} (${d.total}개)`;
+    sel.appendChild(opt);
+  }
+  STATE.date = STATE.index.latest || (STATE.index.dates[0] && STATE.index.dates[0].date);
+  sel.value = STATE.date;
+  await loadDate(STATE.date);
+}
+
+async function loadDate(date) {
+  STATE.date = date;
+  loadLS();
+  try {
+    const res = await fetch(`./ui_data/${date}.json`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    STATE.data = await res.json();
+  } catch (e) {
+    el("main").innerHTML = `<div class="empty-state">${date} 데이터 로드 실패: ${e.message}</div>`;
+    return;
+  }
+  const validIds = new Set(STATE.data.articles.map(a => a.id));
+  STATE.selected = new Set([...STATE.selected].filter(id => validIds.has(id)));
+  STATE.hidden = new Set([...STATE.hidden].filter(id => validIds.has(id)));
+  saveLS();
+  render();
+}
+
+function articleById(id) {
+  return STATE.data.articles.find(a => a.id === id);
+}
+
+function getSortBy(key) {
+  return STATE.sortBy[key] || "cluster";
+}
+
+function applySorted(ids, sortBy) {
+  const arr = ids.map(id => articleById(id)).filter(Boolean);
+  if (sortBy === "newest") {
+    arr.sort((a, b) => tsOf(b.published) - tsOf(a.published));
+  } else if (sortBy === "oldest") {
+    arr.sort((a, b) => tsOf(a.published) - tsOf(b.published));
+  } else {
+    arr.sort((a, b) => {
+      const d = (b.cluster_size || 1) - (a.cluster_size || 1);
+      if (d !== 0) return d;
+      return tsOf(b.published) - tsOf(a.published);
+    });
+  }
+  return arr.map(a => a.id);
+}
+
+function getOrderedIds(key, candidateIds) {
+  const shuffled = STATE.shuffleOrder[key];
+  if (shuffled && shuffled.length === candidateIds.length) {
+    const set = new Set(candidateIds);
+    if (shuffled.every(id => set.has(id))) return shuffled.slice();
+  }
+  return applySorted(candidateIds, getSortBy(key));
+}
+
+function makeSortDropdown(key, sortBy) {
+  const sel = document.createElement("select");
+  sel.className = "section-sort";
+  sel.title = "정렬";
+  for (const [val, label] of Object.entries(SORT_OPTIONS)) {
+    const opt = document.createElement("option");
+    opt.value = val;
+    opt.textContent = label;
+    if (val === sortBy) opt.selected = true;
+    sel.appendChild(opt);
+  }
+  sel.addEventListener("click", (e) => e.stopPropagation());
+  sel.addEventListener("change", (e) => {
+    e.stopPropagation();
+    const newVal = e.target.value;
+    const before = STATE.sortBy[key];
+    STATE.sortBy[key] = newVal;
+    if (STATE.shuffleOrder[key]) delete STATE.shuffleOrder[key];
+    pushHistory({ type: "sortChange", key, before, label: key === TOP_NEWS_KEY ? "Top News" : key });
+    saveLS();
+    render();
+  });
+  return sel;
+}
+
+function renderCard(article, isTopNews) {
+  const isSelected = STATE.selected.has(article.id);
+  const card = document.createElement("div");
+  card.className = "card" + (isTopNews ? " top-news-card" : "") + (isSelected ? " selected" : "");
+  card.dataset.id = article.id;
+
+  const meta = [];
+  if (article.source) meta.push(article.source.slice(0, 10));
+  if (isTopNews) {
+    const ci = STATE.data.cluster_info && STATE.data.cluster_info[article.cluster_id];
+    if (ci && ci.size >= 2) {
+      meta.push(`<span class="outlets">+${ci.size - 1}개</span>`);
+    }
+  } else {
+    const t = timeAgo(article.published);
+    if (t) meta.push(t);
+  }
+
+  card.innerHTML = `
+    <input type="checkbox" class="check" ${isSelected ? "checked" : ""} aria-label="선택">
+    <div class="title" title="${escapeHtml(article.title)}">${escapeHtml(article.title)}</div>
+    <div class="meta">${meta.join(" · ")}</div>
+    <button class="delete" title="숨기기" aria-label="숨기기">✕</button>
+  `;
+
+  card.addEventListener("click", (e) => {
+    if (e.target.classList.contains("check")) return;
+    if (e.target.classList.contains("delete")) {
+      e.stopPropagation();
+      hideCard(article.id, article.title);
+      return;
+    }
+    if (article.url) window.open(article.url, "_blank", "noopener");
+  });
+
+  card.querySelector(".check").addEventListener("change", (e) => {
+    e.stopPropagation();
+    toggleSelect(article.id);
+  });
+
+  return card;
+}
+
+function escapeHtml(s) {
+  return String(s || "").replace(/[&<>"']/g, c => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[c]));
+}
+
+function buildSectionHeader(opts) {
+  const header = document.createElement("div");
+  header.className = "section-header";
+  if (opts.isTopNews) {
+    header.innerHTML = `
+      <div class="section-title">
+        <div class="top-news-label">
+          <span class="dot"></span>
+          <span>TOP NEWS · ${opts.count}개</span>
+        </div>
+      </div>
+      <div class="section-controls"></div>
+    `;
+  } else {
+    header.innerHTML = `
+      <div class="section-title">
+        <span class="toggle">▼</span>
+        <span>${escapeHtml(opts.title)}</span>
+        <span class="section-count">${opts.count}</span>
+      </div>
+      <div class="section-controls"></div>
+    `;
+  }
+  const controls = header.querySelector(".section-controls");
+  controls.appendChild(makeSortDropdown(opts.key, getSortBy(opts.key)));
+  const shuf = document.createElement("button");
+  shuf.className = "section-shuffle";
+  shuf.title = "이 섹션 셔플";
+  shuf.textContent = "🔀";
+  shuf.addEventListener("click", (e) => {
+    e.stopPropagation();
+    shuffleSection(opts.key, opts.title || "Top News");
+  });
+  controls.appendChild(shuf);
+  return header;
+}
+
+function render() {
+  const s = STATE.data.stats;
+  el("subtitle").textContent = `${s.total_articles}개 기사 · 본문 ${s.with_body}개 · 사진 ${s.with_image}개`;
+
+  const main = el("main");
+  main.innerHTML = "";
+
+  const topIds = (STATE.data.top_news_ids || []).filter(id => !STATE.hidden.has(id));
+  if (topIds.length > 0) {
+    const sec = document.createElement("section");
+    sec.className = "section top-news";
+    const header = buildSectionHeader({
+      title: "TOP NEWS",
+      count: topIds.length,
+      key: TOP_NEWS_KEY,
+      isTopNews: true,
+    });
+    sec.appendChild(header);
+    const body = document.createElement("div");
+    body.className = "section-body";
+    const ordered = getOrderedIds(TOP_NEWS_KEY, topIds);
+    for (const id of ordered) {
+      const a = articleById(id);
+      if (a) body.appendChild(renderCard(a, true));
+    }
+    sec.appendChild(body);
+    main.appendChild(sec);
+  }
+
+  for (const cat of STATE.data.categories) {
+    const visibleIds = cat.article_ids.filter(id => !STATE.hidden.has(id));
+    if (visibleIds.length === 0) continue;
+
+    const isCollapsed = STATE.collapsed.has(cat.name);
+    const sec = document.createElement("section");
+    sec.className = "section" + (isCollapsed ? " collapsed" : "");
+    sec.dataset.cat = cat.name;
+    const header = buildSectionHeader({
+      title: cat.name,
+      count: visibleIds.length,
+      key: cat.name,
+      isTopNews: false,
+    });
+    header.addEventListener("click", (e) => {
+      if (e.target.closest(".section-controls")) return;
+      toggleSection(cat.name);
+    });
+    sec.appendChild(header);
+
+    const body = document.createElement("div");
+    body.className = "section-body";
+    const ordered = getOrderedIds(cat.name, visibleIds);
+    for (const id of ordered) {
+      const a = articleById(id);
+      if (a) body.appendChild(renderCard(a, false));
+    }
+    sec.appendChild(body);
+    main.appendChild(sec);
+  }
+
+  if (main.children.length === 0) {
+    main.innerHTML = `<div class="empty-state">표시할 기사가 없습니다.<br>모두 숨김 처리됐을 수 있습니다.</div>`;
+  }
+
+  renderPanel();
+  el("panelToggle").textContent = `선택 ${STATE.selected.size}개 ▲`;
+}
+
+function renderPanel() {
+  const count = STATE.selected.size;
+  el("selectedCount").textContent = count;
+  el("panelActions").style.display = count > 0 ? "flex" : "none";
+  const body = el("panelBody");
+  if (count === 0) {
+    body.innerHTML = `<div class="panel-empty">기사를 선택하면 여기에 모입니다</div>`;
+    return;
+  }
+  const groups = {};
+  for (const id of STATE.selected) {
+    const a = articleById(id);
+    if (!a) continue;
+    const cat = a.category || "기타";
+    (groups[cat] ||= []).push(a);
+  }
+  body.innerHTML = "";
+  const catOrder = STATE.data.categories.map(c => c.name);
+  const catNames = Object.keys(groups).sort((a, b) => {
+    const ai = catOrder.indexOf(a); const bi = catOrder.indexOf(b);
+    return (ai < 0 ? 999 : ai) - (bi < 0 ? 999 : bi);
+  });
+  for (const cat of catNames) {
+    const g = document.createElement("div");
+    g.className = "panel-group";
+    g.innerHTML = `<div class="panel-cat-label">${escapeHtml(cat)} · ${groups[cat].length}</div>`;
+    for (const a of groups[cat]) {
+      const item = document.createElement("div");
+      item.className = "panel-item";
+      item.innerHTML = `
+        <div class="text">
+          <div class="title">${escapeHtml(a.title)}</div>
+          <div class="source">${escapeHtml(a.source || "")}</div>
+        </div>
+        <button class="remove" data-id="${a.id}" title="해제">✕</button>
+      `;
+      item.querySelector(".remove").addEventListener("click", () => toggleSelect(a.id));
+      g.appendChild(item);
+    }
+    body.appendChild(g);
+  }
+}
+
+function toggleSelect(id) {
+  if (STATE.selected.has(id)) STATE.selected.delete(id);
+  else STATE.selected.add(id);
+  saveLS();
+  render();
+}
+
+function hideCard(id, title) {
+  STATE.hidden.add(id);
+  STATE.selected.delete(id);
+  pushHistory({ type: "delete", id, title });
+  saveLS();
+  render();
+}
+
+function shuffleSection(key, label) {
+  let candidateIds;
+  if (key === TOP_NEWS_KEY) {
+    candidateIds = (STATE.data.top_news_ids || []).filter(id => !STATE.hidden.has(id));
+  } else {
+    const cat = STATE.data.categories.find(c => c.name === key);
+    if (!cat) return;
+    candidateIds = cat.article_ids.filter(id => !STATE.hidden.has(id));
+  }
+  const before = STATE.shuffleOrder[key] ? STATE.shuffleOrder[key].slice() : null;
+  STATE.shuffleOrder[key] = shuffle(candidateIds);
+  pushHistory({ type: "shuffleSection", key, label, before });
+  saveLS();
+  render();
+}
+
+function shuffleAll() {
+  const before = JSON.parse(JSON.stringify(STATE.shuffleOrder));
+  for (const cat of STATE.data.categories) {
+    const visibleIds = cat.article_ids.filter(id => !STATE.hidden.has(id));
+    STATE.shuffleOrder[cat.name] = shuffle(visibleIds);
+  }
+  const topVisible = (STATE.data.top_news_ids || []).filter(id => !STATE.hidden.has(id));
+  STATE.shuffleOrder[TOP_NEWS_KEY] = shuffle(topVisible);
+  pushHistory({ type: "shuffleAll", before });
+  saveLS();
+  render();
+}
+
+function toggleSection(name) {
+  if (STATE.collapsed.has(name)) STATE.collapsed.delete(name);
+  else STATE.collapsed.add(name);
+  saveLS();
+  render();
+}
+
+function copySelected() {
+  const ids = [...STATE.selected];
+  if (ids.length === 0) return;
+  const groups = {};
+  for (const id of ids) {
+    const a = articleById(id);
+    if (!a) continue;
+    (groups[a.category || "기타"] ||= []).push(a);
+  }
+  let text = `# 선택한 기사 ${ids.length}개 (${STATE.date})\n\n`;
+  const catOrder = STATE.data.categories.map(c => c.name);
+  const cats = Object.keys(groups).sort((a, b) => {
+    const ai = catOrder.indexOf(a); const bi = catOrder.indexOf(b);
+    return (ai < 0 ? 999 : ai) - (bi < 0 ? 999 : bi);
+  });
+  for (const cat of cats) {
+    text += `## ${cat}\n\n`;
+    for (const a of groups[cat]) {
+      text += `### ${a.title}\n`;
+      text += `- 출처: ${a.source}\n`;
+      text += `- URL: ${a.url}\n`;
+      if (a.published) text += `- 발행: ${a.published}\n`;
+      if (a.body) text += `\n${a.body.trim()}\n`;
+      text += `\n---\n\n`;
+    }
+  }
+  navigator.clipboard.writeText(text).then(() => {
+    showToast(`${ids.length}개 기사 복사됨 (claude.ai에 붙여넣기)`);
+  }).catch(() => {
+    showToast("복사 실패. 브라우저 권한을 확인하세요.");
+  });
+}
+
+function clearSelection() {
+  if (STATE.selected.size === 0) return;
+  if (!confirm(`선택한 ${STATE.selected.size}개를 모두 해제할까요?`)) return;
+  pushHistory({ type: "clearSelection", before: [...STATE.selected] });
+  STATE.selected.clear();
+  saveLS();
+  render();
+}
+
+el("dateSelect").addEventListener("change", (e) => loadDate(e.target.value));
+el("themeBtn").addEventListener("click", () => {
+  const cur = document.documentElement.getAttribute("data-theme");
+  const next = cur === "dark" ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", next);
+  localStorage.setItem($globalKey("theme"), next);
+  el("themeBtn").textContent = next === "dark" ? "☀️" : "🌙";
+});
+el("undoBtn").addEventListener("click", undo);
+el("shuffleAllBtn").addEventListener("click", shuffleAll);
+el("copyBtn").addEventListener("click", copySelected);
+el("clearBtn").addEventListener("click", clearSelection);
+el("panelToggle").addEventListener("click", () => {
+  el("sidepanel").classList.toggle("open");
+});
+document.addEventListener("keydown", (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") {
+    e.preventDefault();
+    undo();
+  }
+});
+
+init();
+</script>
+
+</body>
+</html>
