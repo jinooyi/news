@@ -5,18 +5,28 @@ extractor + clusterer 결과를 합쳐서 UI가 한 번에 읽을 JSON 생성.
 
 선택 정책:
 - 한국스포츠: 제외
-- 미국이민, 달라스텍사스한인: 전체 노출
-- 그 외 카테고리: 클러스터 크기 큰 순으로 15개씩
+- 4일 넘은 기사: 제외
+- 미국이민, 달라스텍사스한인: 전체 노출 (단, 같은 클러스터는 대표 1개)
+- 그 외 카테고리: 클러스터 크기 큰 순으로 50개 (단, 같은 클러스터는 대표 1개)
+
+카테고리 순서 (Top news 바로 아래):
+- 달라스텍사스한인 (1순위 - 달라스 한인 영상 타겟)
+- 한미외교
+- 한국경제
+- 미국이민
+- 한국정치사회
+- 흥미사건이벤트
+- 기타
 
 추가 처리:
 - Google News 출처는 제목/도메인에서 진짜 매체명 추출
 - published 시간을 ISO 8601로 통일 (실패 시 collected_at 사용)
+- 카테고리 내 같은 클러스터는 대표 기사 1개만 노출 (중복 제거)
 
 실행: python build_ui_data.py
 """
 
 import json
-import re
 from pathlib import Path
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
@@ -28,19 +38,30 @@ TOP_NEWS_MIN_OUTLETS = 2
 
 EXCLUDED_CATEGORIES = {"한국스포츠"}
 UNLIMITED_CATEGORIES = {"미국이민", "달라스텍사스한인"}
-PER_CATEGORY_LIMIT = 15
+PER_CATEGORY_LIMIT = 50
 
+MAX_AGE_DAYS = 4
+
+# ★ 새 카테고리 순서: 달라스 한인 영상 타겟에 맞춰 재배치
 CATEGORY_ORDER = [
-    "한미외교",
-    "미국이민",
-    "한국경제",
-    "한국정치사회",
     "달라스텍사스한인",
+    "한미외교",
+    "한국경제",
+    "미국이민",
+    "한국정치사회",
     "흥미사건이벤트",
     "기타",
 ]
 
-# 도메인 → 매체명 매핑 (Google News 출처일 때 사용)
+SOURCE_PRIORITY = {
+    "한겨레": 10, "경향신문": 10, "오마이뉴스": 10,
+    "조선일보": 9, "중앙일보": 9, "동아일보": 9,
+    "연합뉴스": 9, "뉴스1": 8, "뉴시스": 8,
+    "매일경제": 8, "한국경제": 8,
+    "KBS": 7, "MBC": 7, "SBS": 7, "JTBC": 7, "YTN": 7,
+    "BBC": 7,
+}
+
 DOMAIN_TO_SOURCE = {
     "hani.co.kr": "한겨레",
     "khan.co.kr": "경향신문",
@@ -93,18 +114,15 @@ DOMAIN_TO_SOURCE = {
     "mbn.co.kr": "MBN",
     "newdaily.co.kr": "뉴데일리",
     "pressian.com": "프레시안",
-    "ohmynews.com": "오마이뉴스",
 }
 
 
 def _parse_date_to_iso(date_str):
-    """다양한 날짜 형식을 ISO 8601 (UTC)로 변환. 실패 시 None."""
     if not date_str:
         return None
     s = str(date_str).strip()
     if not s:
         return None
-    # 1) RFC 2822 (Thu, 09 Apr 2026 07:00:00 GMT)
     try:
         dt = parsedate_to_datetime(s)
         if dt:
@@ -113,7 +131,6 @@ def _parse_date_to_iso(date_str):
             return dt.astimezone(timezone.utc).isoformat()
     except Exception:
         pass
-    # 2) ISO 8601 (2026-04-25T00:00:07.009009)
     try:
         s2 = s.replace("Z", "+00:00")
         dt = datetime.fromisoformat(s2)
@@ -126,20 +143,16 @@ def _parse_date_to_iso(date_str):
 
 
 def _extract_source_from_title(title):
-    """'제목 - 매체명' 형식에서 매체명 추출."""
     if not title:
         return None
-    # 마지막 ' - ' 이후 부분
     if " - " in title:
         candidate = title.rsplit(" - ", 1)[1].strip()
-        # 너무 길면 (30자 이상) 매체명이 아닐 가능성
         if 1 <= len(candidate) <= 30:
             return candidate
     return None
 
 
 def _extract_source_from_url(url):
-    """URL의 도메인에서 매체명 매핑."""
     if not url:
         return None
     try:
@@ -147,11 +160,9 @@ def _extract_source_from_url(url):
         host = host.replace("www.", "").lower()
         if host in DOMAIN_TO_SOURCE:
             return DOMAIN_TO_SOURCE[host]
-        # 부분 매칭
         for domain, name in DOMAIN_TO_SOURCE.items():
             if host.endswith(domain):
                 return name
-        # fallback: 도메인 자체를 짧게
         parts = host.split(".")
         if len(parts) >= 2:
             return parts[-2]
@@ -161,10 +172,6 @@ def _extract_source_from_url(url):
 
 
 def _resolve_source(orig_source, title, url):
-    """진짜 매체명 결정.
-    - 'Google News'로 시작하면 제목/URL에서 추출
-    - 추출 실패 시 원래 source 유지
-    """
     if not orig_source:
         return _extract_source_from_url(url) or "Unknown"
     if "Google News" in orig_source or "GoogleNews" in orig_source.replace(" ", ""):
@@ -178,7 +185,6 @@ def _resolve_source(orig_source, title, url):
 
 
 def _clean_title(title):
-    """'제목 - 매체명' 형식이면 매체명 부분 제거 (출처는 별도로 표시)."""
     if not title:
         return ""
     if " - " in title:
@@ -195,6 +201,36 @@ def _ts_for_sort(iso_str):
         return int(datetime.fromisoformat(iso_str.replace("Z", "+00:00")).timestamp())
     except Exception:
         return 0
+
+
+def _representative_score(article):
+    """클러스터 내 대표 기사 선정 점수. 본문 > 사진 > 매체 > 최신."""
+    score = 0
+    if article.get("has_body"):
+        score += 1000
+    if article.get("has_image"):
+        score += 500
+    src = article.get("source", "")
+    score += SOURCE_PRIORITY.get(src, 0) * 10
+    score += _ts_for_sort(article.get("published", "")) // 100000
+    return score
+
+
+def _dedupe_by_cluster(articles):
+    """같은 cluster_id인 기사는 대표 1개만 남김."""
+    by_cluster = {}
+    no_cluster = []
+    for a in articles:
+        cid = a.get("cluster_id")
+        if not cid:
+            no_cluster.append(a)
+            continue
+        if cid not in by_cluster:
+            by_cluster[cid] = a
+        else:
+            if _representative_score(a) > _representative_score(by_cluster[cid]):
+                by_cluster[cid] = a
+    return list(by_cluster.values()) + no_cluster
 
 
 def load_json(path):
@@ -232,7 +268,6 @@ def build_for_date(date_stem):
         clean_title = _clean_title(raw_title)
         resolved_source = _resolve_source(art.get("source", ""), raw_title, url)
 
-        # published 정규화
         published_iso = _parse_date_to_iso(art.get("published"))
         if not published_iso:
             published_iso = _parse_date_to_iso(art.get("collected_at"))
@@ -263,7 +298,28 @@ def build_for_date(date_stem):
     if excluded_count:
         print(f"  🚫 제외 ({', '.join(EXCLUDED_CATEGORIES)}): {excluded_count}개")
 
-    # 카테고리별 노출 정책
+    # 4일 넘은 기사 제외
+    now_ts = datetime.now(timezone.utc).timestamp()
+    cutoff_ts = now_ts - (MAX_AGE_DAYS * 86400)
+
+    def is_recent(article):
+        ts = _ts_for_sort(article.get("published", ""))
+        return ts >= cutoff_ts
+
+    old_count = sum(1 for a in all_articles_full if not is_recent(a))
+    all_articles_full = [a for a in all_articles_full if is_recent(a)]
+    if old_count:
+        print(f"  ⏰ 제외 ({MAX_AGE_DAYS}일 초과): {old_count}개")
+
+    # 클러스터 정보 (필터링 후의 기사로 계산)
+    cluster_sources = {}
+    for a in all_articles_full:
+        cid = a["cluster_id"]
+        if not cid:
+            continue
+        cluster_sources.setdefault(cid, set()).add(a["source"])
+
+    # 카테고리별 노출 + 클러스터 중복 제거
     by_category_full = {}
     for a in all_articles_full:
         cat = a.get("category", "기타")
@@ -272,25 +328,23 @@ def build_for_date(date_stem):
     final_articles = []
     print(f"  📂 카테고리별 적용:")
     for cat, articles in by_category_full.items():
-        articles.sort(key=lambda a: (-a.get("cluster_size", 1), -_ts_for_sort(a.get("published", ""))))
+        before_dedup = len(articles)
+        deduped = _dedupe_by_cluster(articles)
+        dedup_diff = before_dedup - len(deduped)
+
+        deduped.sort(key=lambda a: (-a.get("cluster_size", 1), -_ts_for_sort(a.get("published", ""))))
+
         if cat in UNLIMITED_CATEGORIES:
-            kept = articles
-            print(f"      └ {cat}: {len(kept)}개 (전체 노출)")
+            kept = deduped
+            print(f"      └ {cat}: {len(kept)}개 (전체, 클러스터 중복 -{dedup_diff})")
         else:
-            kept = articles[:PER_CATEGORY_LIMIT]
-            print(f"      └ {cat}: {len(kept)}개 (제한 {PER_CATEGORY_LIMIT}, 원본 {len(articles)})")
+            kept = deduped[:PER_CATEGORY_LIMIT]
+            print(f"      └ {cat}: {len(kept)}개 (제한 {PER_CATEGORY_LIMIT}, 원본 {before_dedup}, 클러스터 중복 -{dedup_diff})")
         final_articles.extend(kept)
 
     print(f"  ✅ 최종 기사: {len(final_articles)}개")
 
     # Top news
-    cluster_sources = {}
-    for a in final_articles:
-        cid = a["cluster_id"]
-        if not cid:
-            continue
-        cluster_sources.setdefault(cid, set()).add(a["source"])
-
     top_cluster_ids = [
         cid for cid, sources in cluster_sources.items()
         if len(sources) >= TOP_NEWS_MIN_OUTLETS
@@ -299,10 +353,9 @@ def build_for_date(date_stem):
 
     top_news_ids = []
     for cid in top_cluster_ids:
-        cluster_articles = [a for a in final_articles if a["cluster_id"] == cid]
-        cluster_articles.sort(key=lambda a: (-int(a["has_image"]), -int(a["has_body"])))
-        if cluster_articles:
-            top_news_ids.append(cluster_articles[0]["id"])
+        candidates = [a for a in final_articles if a["cluster_id"] == cid]
+        if candidates:
+            top_news_ids.append(candidates[0]["id"])
 
     # 카테고리별 정리
     by_category_final = {}
@@ -353,6 +406,8 @@ def main():
     UI_DIR.mkdir(parents=True, exist_ok=True)
     print("=" * 70)
     print(f"  🎨 UI 데이터 빌드  ({datetime.now().strftime('%H:%M:%S')})")
+    print(f"  ⏰ {MAX_AGE_DAYS}일 넘은 기사 제외")
+    print(f"  📂 카테고리 순서: {' > '.join(CATEGORY_ORDER)}")
     print("=" * 70)
 
     extracted_files = sorted(OUTPUT_DIR.glob("*_extracted.json"))
