@@ -506,6 +506,49 @@
     font-weight: normal;
   }
 
+  /* 영상 매칭 썸네일 */
+  .panel-videos {
+    display: flex;
+    gap: 4px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+  }
+  .panel-video {
+    position: relative;
+    display: block;
+    width: 80px;
+    height: 45px;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    text-decoration: none;
+    transition: transform 0.1s;
+  }
+  .panel-video:hover { transform: scale(1.05); }
+  .panel-video img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .panel-video .ch-badge {
+    position: absolute;
+    bottom: 2px;
+    left: 2px;
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 600;
+    padding: 1px 4px;
+    border-radius: 2px;
+  }
+  .panel-no-video {
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--text-faint);
+    font-style: italic;
+  }
+
   .script-modal {
     display: none;
     position: fixed;
@@ -692,6 +735,7 @@
     </div>
     <div class="panel-actions" id="panelActions" style="display: none;">
       <button class="btn-primary" id="generateBtn">📋 스크립트 생성</button>
+      <button class="btn-secondary" id="exportVideoBtn" style="background: var(--bg-card); color: var(--text); border: 1px solid var(--border-strong); padding: 8px 12px; font-size: 12px; border-radius: 6px;">📥 영상매칭 export</button>
       <button class="btn-danger" id="clearBtn">🗑 비우기</button>
     </div>
   </aside>
@@ -764,6 +808,7 @@
   </div>
   <div class="overlay-actions" id="selectedOverlayActions" style="display: none;">
     <button class="btn-primary" id="generateBtnMobile">📋 스크립트 생성</button>
+    <button class="btn-secondary" id="exportVideoBtnMobile" style="background: var(--bg-card); color: var(--text); border: 1px solid var(--border-strong); padding: 8px 12px; font-size: 12px; border-radius: 6px;">📥 영상매칭</button>
     <button class="btn-danger" id="clearBtnMobile">🗑 비우기</button>
   </div>
 </div>
@@ -826,6 +871,7 @@ const STATE = {
   sortBy: {},
   history: [],
   collapsed: new Set(),
+  videoMatches: {},
 };
 const MAX_HISTORY = 50;
 
@@ -956,6 +1002,19 @@ async function loadDate(date) {
   STATE.selected = new Set([...STATE.selected].filter(id => validIds.has(id)));
   STATE.hidden = new Set([...STATE.hidden].filter(id => validIds.has(id)));
   saveLS();
+
+  // 영상 매칭 결과 자동 로드 (없어도 OK)
+  try {
+    const vmRes = await fetch(`./ui_data/video_matches.json?t=${Date.now()}`);
+    if (vmRes.ok) {
+      STATE.videoMatches = await vmRes.json();
+    } else {
+      STATE.videoMatches = {};
+    }
+  } catch (e) {
+    STATE.videoMatches = {};
+  }
+
   render();
 }
 
@@ -1180,10 +1239,21 @@ function renderPanelInto(bodyEl, actionsEl) {
     for (const a of groups[cat]) {
       const item = document.createElement("div");
       item.className = "panel-item";
+      const matches = STATE.videoMatches[a.id] || [];
+      const videosHtml = matches.length > 0
+        ? `<div class="panel-videos">${matches.map(m => `
+            <a href="${escapeHtml(m.url)}" target="_blank" rel="noopener" class="panel-video" title="${escapeHtml(m.title)}">
+              <img src="${escapeHtml(m.thumbnail)}" alt="" loading="lazy">
+              <span class="ch-badge">${escapeHtml(m.channel)}</span>
+            </a>`).join("")}</div>`
+        : (Object.keys(STATE.videoMatches).length > 0
+            ? `<div class="panel-no-video">📺 매칭 영상 없음</div>`
+            : "");
       item.innerHTML = `
         <div class="text">
           <div class="title">${escapeHtml(a.title)}</div>
           <div class="source">${escapeHtml(a.source || "")}</div>
+          ${videosHtml}
         </div>
         <button class="remove" data-id="${a.id}" title="해제">✕</button>
       `;
@@ -1390,6 +1460,8 @@ el("generateBtn").addEventListener("click", openScriptModal);
 el("clearBtn").addEventListener("click", clearSelection);
 el("generateBtnMobile").addEventListener("click", openScriptModal);
 el("clearBtnMobile").addEventListener("click", clearSelection);
+el("exportVideoBtn").addEventListener("click", exportSelectedForVideoMatching);
+el("exportVideoBtnMobile").addEventListener("click", exportSelectedForVideoMatching);
 
 el("scriptModalClose").addEventListener("click", closeScriptModal);
 el("scriptModalCloseBtn").addEventListener("click", closeScriptModal);
@@ -1417,6 +1489,34 @@ document.addEventListener("keydown", (e) => {
     closeAllOverlays();
   }
 });
+
+function exportSelectedForVideoMatching() {
+  const articles = [];
+  for (const id of STATE.selected) {
+    const a = articleById(id);
+    if (!a) continue;
+    articles.push({
+      id: a.id,
+      title: a.title,
+      category: a.category || "기타",
+    });
+  }
+  if (articles.length === 0) {
+    showToast("선택된 기사가 없습니다");
+    return;
+  }
+  const blob = new Blob([JSON.stringify(articles, null, 2)],
+                       { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "selected_articles.json";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  showToast(`${articles.length}개 기사 export 완료`);
+}
 
 init();
 </script>
